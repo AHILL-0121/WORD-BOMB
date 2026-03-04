@@ -9,6 +9,7 @@ import { PlayerList } from "./PlayerList";
 import { ResultsScreen } from "./ResultsScreen";
 import { RoomSettingsModal } from "./RoomSettingsModal";
 import { FuseCharacter } from "./FuseCharacter";
+import { ImageWithFallback } from "./ImageWithFallback";
 import type { RoomSettings } from "@/types/game";
 
 interface GameRoomProps {
@@ -89,14 +90,11 @@ export function GameRoom({ roomId, playerName, avatar }: GameRoomProps) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center space-y-4">
-          <img 
-            src="/bomb-pixel.png" 
-            alt="Loading" 
+          <ImageWithFallback
+            src="/bomb-pixel.png"
+            alt="Loading"
             className="w-16 h-16 mx-auto animate-spin"
-            onError={(e) => {
-              // Fallback to emoji if image doesn't exist
-              e.currentTarget.outerHTML = '<div class="text-6xl animate-spin">💣</div>';
-            }}
+            fallback={<div className="text-6xl animate-spin">💣</div>}
           />
           <p className="font-mono text-smoke text-sm tracking-widest">CONNECTING...</p>
         </div>
@@ -110,14 +108,11 @@ export function GameRoom({ roomId, playerName, avatar }: GameRoomProps) {
       <div className="max-w-7xl mx-auto mb-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <img 
-              src="/logo.png" 
-              alt="Word Bomb" 
+            <ImageWithFallback
+              src="/logo.png"
+              alt="Word Bomb"
               className="h-12 w-auto"
-              onError={(e) => {
-                // Fallback to text if image doesn't exist
-                e.currentTarget.style.display = 'none';
-              }}
+              fallback={null}
             />
             <div>
               <h1 className="font-display text-4xl text-cream">

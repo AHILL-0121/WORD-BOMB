@@ -1,18 +1,16 @@
 import Link from 'next/link';
+import { ImageWithFallback } from '@/components/ImageWithFallback';
 
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="text-center space-y-8">
         {/* Pixel Bomb Icon */}
-        <img 
-          src="/bomb-pixel.png" 
-          alt="404 - Not Found" 
+        <ImageWithFallback
+          src="/bomb-pixel.png"
+          alt="404 - Not Found"
           className="w-32 h-32 mx-auto animate-pulse"
-          onError={(e) => {
-            // Fallback to emoji if image doesn't exist
-            e.currentTarget.outerHTML = '<div class="text-9xl animate-pulse">💣</div>';
-          }}
+          fallback={<div className="text-9xl animate-pulse">💣</div>}
         />
         
         {/* Error Message */}

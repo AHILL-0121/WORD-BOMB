@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Lobby } from "./Lobby";
 import { FuseCharacter } from "./FuseCharacter";
+import { ImageWithFallback } from "./ImageWithFallback";
 
 export function LandingPage() {
   const [showLobby, setShowLobby] = useState(false);
@@ -23,19 +24,16 @@ export function LandingPage() {
           
           {/* Wordmark Logo */}
           <div className="flex justify-center mb-4">
-            <img 
-              src="/wordmark.png" 
-              alt="Word Bomb" 
+            <ImageWithFallback
+              src="/wordmark.png"
+              alt="Word Bomb"
               className="h-24 md:h-32 w-auto"
-              onError={(e) => {
-                // Fallback to text if image doesn't exist
-                e.currentTarget.style.display = 'none';
-                document.getElementById('text-fallback')?.classList.remove('hidden');
-              }}
+              fallback={
+                <h1 className="font-display text-8xl md:text-9xl text-ember tracking-wider animate-glowPulse">
+                  WORD BOMB
+                </h1>
+              }
             />
-            <h1 id="text-fallback" className="hidden font-display text-8xl md:text-9xl text-ember tracking-wider animate-glowPulse">
-              WORD BOMB
-            </h1>
           </div>
           
           <p className="font-body text-2xl md:text-3xl text-gold">
