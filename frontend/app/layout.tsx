@@ -4,6 +4,22 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Word Bomb - Real-Time Multiplayer Word Game",
   description: "A fast-paced multiplayer word game. Find words containing the syllable before time runs out!",
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
+  openGraph: {
+    title: 'Word Bomb - Real-Time Multiplayer Word Game',
+    description: 'A fast-paced multiplayer word game. Find words containing the syllable before time runs out!',
+    images: ['/og-image.png'],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Word Bomb',
+    description: 'Real-time multiplayer word game',
+    images: ['/og-image.png'],
+  },
 };
 
 export default function RootLayout({

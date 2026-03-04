@@ -406,5 +406,20 @@
   .crown-bounce {
     animation: crown-bounce 1.5s ease-in-out infinite;
   }
+
+  /* Background Textures */
+  .bg-dark-textured {
+    background-image: url('/dark-textured-bg.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+  }
+
+  .splash-screen {
+    background-image: url('/og-image.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+  }
 }
 

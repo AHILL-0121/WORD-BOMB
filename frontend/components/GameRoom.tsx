@@ -89,7 +89,15 @@ export function GameRoom({ roomId, playerName, avatar }: GameRoomProps) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center space-y-4">
-          <div className="text-6xl animate-spin">💣</div>
+          <img 
+            src="/bomb-pixel.png" 
+            alt="Loading" 
+            className="w-16 h-16 mx-auto animate-spin"
+            onError={(e) => {
+              // Fallback to emoji if image doesn't exist
+              e.currentTarget.outerHTML = '<div class="text-6xl animate-spin">💣</div>';
+            }}
+          />
           <p className="font-mono text-smoke text-sm tracking-widest">CONNECTING...</p>
         </div>
       </div>
@@ -101,13 +109,24 @@ export function GameRoom({ roomId, playerName, avatar }: GameRoomProps) {
       {/* Header */}
       <div className="max-w-7xl mx-auto mb-8">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-display text-4xl text-cream">
-              WORD <span className="text-ember">BOMB</span>
-            </h1>
-            <p className="font-mono text-xs text-smoke tracking-widest mt-1">
-              ROOM: {roomId}
-            </p>
+          <div className="flex items-center gap-4">
+            <img 
+              src="/logo.png" 
+              alt="Word Bomb" 
+              className="h-12 w-auto"
+              onError={(e) => {
+                // Fallback to text if image doesn't exist
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+            <div>
+              <h1 className="font-display text-4xl text-cream">
+                WORD <span className="text-ember">BOMB</span>
+              </h1>
+              <p className="font-mono text-xs text-smoke tracking-widest mt-1">
+                ROOM: {roomId}
+              </p>
+            </div>
           </div>
           
           <div className="flex items-center gap-4">

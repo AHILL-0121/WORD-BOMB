@@ -21,9 +21,23 @@ export function LandingPage() {
             <FuseCharacter mood="excited" size={180} showSpeech={false} />
           </div>
           
-          <h1 className="font-display text-8xl md:text-9xl text-ember tracking-wider animate-glowPulse">
-            WORD BOMB
-          </h1>
+          {/* Wordmark Logo */}
+          <div className="flex justify-center mb-4">
+            <img 
+              src="/wordmark.png" 
+              alt="Word Bomb" 
+              className="h-24 md:h-32 w-auto"
+              onError={(e) => {
+                // Fallback to text if image doesn't exist
+                e.currentTarget.style.display = 'none';
+                document.getElementById('text-fallback')?.classList.remove('hidden');
+              }}
+            />
+            <h1 id="text-fallback" className="hidden font-display text-8xl md:text-9xl text-ember tracking-wider animate-glowPulse">
+              WORD BOMB
+            </h1>
+          </div>
+          
           <p className="font-body text-2xl md:text-3xl text-gold">
             The Ultimate Multiplayer Word Game
           </p>
