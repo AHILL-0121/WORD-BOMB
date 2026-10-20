@@ -1,157 +1,238 @@
 "use client";
 
-import { useState } from "react";
-import { Lobby } from "./Lobby";
-import { FuseCharacter } from "./FuseCharacter";
-import { ImageWithFallback } from "./ImageWithFallback";
+import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Fuse } from "./ui/Fuse";
+import { Icon, PassIllustration } from "./ui/Icon";
+import { ToastStack, useToasts } from "./ui/Toasts";
+import { AVATARS, monogram, type AvatarId } from "@/lib/avatars";
+import { MAX_NAME_LENGTH } from "@/lib/game-logic";
+import { loadProfile, roomHref, saveProfile } from "@/lib/profile";
+import { generateRoomCode, isValidRoomCode, ROOM_CODE_LENGTH } from "@/lib/syllables";
+import { sfx } from "@/lib/sfx";
+
+const HERO_SYLLABLES = ["ING", "STR", "OU", "GHT", "QU", "ENT", "ACK"];
+const BAND_WORDS = ["MOONLIGHT", "STRANGE", "KINGDOM", "ASTRONAUT", "QUILT", "THOUGHT", "UMBRELLA", "KITCHEN", "PUMPKIN", "VAMPIRE", "OCEAN", "JACKET"];
 
 export function LandingPage() {
-  const [showLobby, setShowLobby] = useState(false);
+  const router = useRouter();
+  const params = useSearchParams();
+  const { toasts, toast } = useToasts();
 
-  if (showLobby) {
-    return <Lobby />;
-  }
+  const [name, setName] = useState("");
+  const [avatar, setAvatar] = useState<AvatarId>(AVATARS[0].id);
+  const [code, setCode] = useState("");
+  const [codeShake, setCodeShake] = useState(0);
+  const [syllable, setSyllable] = useState(0);
+  const [look, setLook] = useState({ x: 0, y: 0 });
+  const nameRef = useRef<HTMLInputElement>(null);
+  const bombRef = useRef<HTMLDivElement>(null);
+
+  // Restore the saved profile, and pick up a code from an invite link.
+  useEffect(() => {
+    const saved = loadProfile();
+    if (saved) {
+      setName(saved.name);
+      setAvatar(saved.avatar);
+    }
+    const join = params.get("join")?.toUpperCase();
+    if (join && isValidRoomCode(join)) {
+      setCode(join);
+      if (!saved?.name) nameRef.current?.focus();
+    }
+  }, [params]);
+
+  useEffect(() => {
+    const id = setInterval(() => setSyllable((i) => (i + 1) % HERO_SYLLABLES.length), 2200);
+    return () => clearInterval(id);
+  }, []);
+
+  // FUSE's eyes follow the pointer.
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      const r = bombRef.current?.getBoundingClientRect();
+      if (!r) return;
+      const cx = r.left + r.width * 0.48;
+      const cy = r.top + r.height * 0.55;
+      const angle = Math.atan2(e.clientY - cy, e.clientX - cx);
+      const reach = Math.min(1, Math.hypot(e.clientX - cx, e.clientY - cy) / 260);
+      setLook({ x: Math.cos(angle) * 5 * reach, y: Math.sin(angle) * 5 * reach });
+    };
+    window.addEventListener("pointermove", onMove);
+    return () => window.removeEventListener("pointermove", onMove);
+  }, []);
+
+  const profile = () => {
+    const clean = name.trim().replace(/\s+/g, " ").slice(0, MAX_NAME_LENGTH);
+    if (!clean) {
+      toast("Pick a nickname first", "bad");
+      nameRef.current?.focus();
+      return null;
+    }
+    const p = { name: clean, avatar };
+    saveProfile(p);
+    return p;
+  };
+
+  const create = (extra: Record<string, string> = {}) => {
+    const p = profile();
+    if (p) router.push(roomHref(generateRoomCode(), p, extra));
+  };
+
+  const join = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isValidRoomCode(code)) {
+      setCodeShake((n) => n + 1);
+      toast(`Room codes are ${ROOM_CODE_LENGTH} characters`, "bad");
+      return;
+    }
+    const p = profile();
+    if (p) router.push(roomHref(code, p));
+  };
+
+  const initial = monogram(name || "?");
+  const selected = AVATARS.find((a) => a.id === avatar) ?? AVATARS[0];
 
   return (
-    <div className="min-h-screen bg-black text-cream flex items-center justify-center p-4">
-      <div className="max-w-4xl w-full space-y-8 animate-slideUpFade">
-        {/* Header */}
-        <div className="text-center space-y-6">
-          {/* FUSE Mascot */}
-          <div className="flex justify-center mb-6">
-            <FuseCharacter mood="excited" size={180} showSpeech={false} />
+    <main className="page home">
+      <div className="home-inner">
+        <div className="brand">
+          <div className="logo">
+            <span className="dot" aria-hidden="true" />
+            WORD<b>BOMB</b>
           </div>
-          
-          {/* Wordmark Logo */}
-          <div className="flex justify-center mb-4">
-            <ImageWithFallback
-              src="/wordmark.png"
-              alt="Word Bomb"
-              className="h-24 md:h-32 w-auto"
-              fallback={
-                <h1 className="font-display text-8xl md:text-9xl text-ember tracking-wider animate-glowPulse">
-                  WORD BOMB
-                </h1>
-              }
-            />
-          </div>
-          
-          <p className="font-body text-2xl md:text-3xl text-gold">
-            The Ultimate Multiplayer Word Game
-          </p>
         </div>
 
-        {/* Main Content */}
-        <div className="bg-ash rounded-2xl p-8 md:p-12 space-y-8 border-2 border-smoke/30">
-          {/* How to Play */}
-          <section className="space-y-4">
-            <h2 className="font-display text-4xl text-acid tracking-wide">
-              HOW TO PLAY
-            </h2>
-            <div className="space-y-3 font-body text-lg text-cream/90">
-              <p>
-                <span className="text-gold font-bold">1.</span> Create or join a room with friends (2-16 players)
-              </p>
-              <p>
-                <span className="text-gold font-bold">2.</span> When it's your turn, you'll see a random syllable
-              </p>
-              <p>
-                <span className="text-gold font-bold">3.</span> Type a valid English word containing that syllable
-              </p>
-              <p>
-                <span className="text-gold font-bold">4.</span> Submit before the timer runs out!
-              </p>
-              <p>
-                <span className="text-gold font-bold">5.</span> The last player standing wins
-              </p>
-            </div>
-          </section>
+        <div className="hero">
+          <div ref={bombRef}>
+            <Fuse mood="idle" className="hero-bomb" look={look}>
+              <div className="orbit" aria-hidden="true" />
+              <span className="floaty" style={{ left: "-8%", top: "18%", background: "var(--amber)" }} aria-hidden="true">ER</span>
+              <span className="floaty" style={{ right: "-10%", top: "52%", background: "var(--text)", animationDelay: "-1.4s" }} aria-hidden="true">OU</span>
+              <span className="floaty" style={{ left: "4%", bottom: "10%", background: "var(--fuse)", animationDelay: "-2.6s" }} aria-hidden="true">STR</span>
+              <span key={syllable} className="sticker pop" aria-hidden="true">{HERO_SYLLABLES[syllable]}</span>
+            </Fuse>
+          </div>
+          <div className="copy">
+            <h1>
+              Say a word
+              <br />
+              before it <span className="hl">blows.</span>
+            </h1>
+            <p>A party word game for 2–16 friends. Type a word that contains the letters on the bomb, then pass it on. Quickly.</p>
+          </div>
+        </div>
 
-          {/* Game Rules */}
-          <section className="space-y-4 border-t border-smoke/30 pt-8">
-            <h2 className="font-display text-4xl text-acid tracking-wide">
-              RULES
-            </h2>
-            <div className="grid md:grid-cols-2 gap-4 font-body text-base text-cream/90">
-              <div className="space-y-2">
-                <p className="flex items-start gap-2">
-                  <span className="text-ember text-xl">❤️</span>
-                  <span>
-                    <span className="font-bold text-ember">3 Lives:</span> Each player starts with 3 lives
-                  </span>
-                </p>
-                <p className="flex items-start gap-2">
-                  <span className="text-gold text-xl">⏱️</span>
-                  <span>
-                    <span className="font-bold text-gold">Timer:</span> Starts at 12 seconds, decreases each round
-                  </span>
-                </p>
-                <p className="flex items-start gap-2">
-                  <span className="text-acid text-xl">✓</span>
-                  <span>
-                    <span className="font-bold text-acid">Valid Words:</span> Must be real English words
-                  </span>
-                </p>
-              </div>
-              <div className="space-y-2">
-                <p className="flex items-start gap-2">
-                  <span className="text-smoke text-xl">🚫</span>
-                  <span>
-                    <span className="font-bold text-smoke">No Repeats:</span> Each word can only be used once per game
-                  </span>
-                </p>
-                <p className="flex items-start gap-2">
-                  <span className="text-ember text-xl">💥</span>
-                  <span>
-                    <span className="font-bold text-ember">Elimination:</span> Run out of lives and you're out
-                  </span>
-                </p>
-                <p className="flex items-start gap-2">
-                  <span className="text-gold text-xl">🏆</span>
-                  <span>
-                    <span className="font-bold text-gold">Victory:</span> Last player with lives remaining wins
-                  </span>
-                </p>
-              </div>
+        <div className="panel card">
+          <div>
+            <label className="label" htmlFor="name">Who&apos;s playing?</label>
+            <div className="name-row">
+              <span className="me-ava" style={{ "--c": selected.color } as CSSProperties} data-s={selected.shape === "square" ? "s" : "c"} aria-hidden="true">
+                {initial}
+              </span>
+              <input
+                id="name"
+                ref={nameRef}
+                className="field"
+                maxLength={MAX_NAME_LENGTH}
+                placeholder="Your nickname"
+                autoComplete="nickname"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
             </div>
-          </section>
+          </div>
 
-          {/* CTA Button */}
-          <div className="flex justify-center pt-4">
-            <button
-              onClick={() => setShowLobby(true)}
-              className="group relative px-12 py-5 bg-ember text-cream font-display text-3xl tracking-wider rounded-xl hover:bg-ember/90 transition-all hover:scale-105 active:scale-95 shadow-lg hover:shadow-ember/50"
-            >
-              <span className="relative z-10">PLAY NOW</span>
-              <div className="absolute inset-0 bg-gradient-to-r from-ember to-gold opacity-0 group-hover:opacity-20 rounded-xl transition-opacity" />
+          <div>
+            <span className="label" id="token-label">Pick your token</span>
+            <div className="avatars" role="radiogroup" aria-labelledby="token-label">
+              {AVATARS.map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={a.id === avatar}
+                  aria-label={a.name}
+                  className="av-opt"
+                  style={{ "--c": a.color } as CSSProperties}
+                  data-s={a.shape === "square" ? "s" : "c"}
+                  onClick={() => {
+                    setAvatar(a.id);
+                    sfx.pop();
+                  }}
+                >
+                  <span aria-hidden="true">{initial}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button className="btn btn-primary btn-lg btn-block" onClick={() => create()}>
+            <Icon name="plus" />
+            Create a room
+          </button>
+
+          <div className="divider">or join friends</div>
+
+          <form className="join-row" onSubmit={join}>
+            <label className="sr-only" htmlFor="code">Room code</label>
+            <input
+              id="code"
+              key={codeShake}
+              className={`field code-field ${codeShake ? "shake" : ""}`}
+              maxLength={ROOM_CODE_LENGTH}
+              placeholder="CODE"
+              autoCapitalize="characters"
+              autoComplete="off"
+              spellCheck={false}
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+            />
+            <button className="btn btn-accent" type="submit">Join</button>
+          </form>
+
+          <div className="modes single">
+            <button className="mode" onClick={() => create({ solo: "1" })}>
+              <Icon name="person" className="e" />
+              <b>Solo vs bots</b>
+              <small>Warm up against three bots, no friends required</small>
             </button>
           </div>
         </div>
 
-        {/* Developer Note */}
-        <div className="text-center space-y-2 pb-8">
-          <p className="font-mono text-xs text-smoke/70">
-            Crafted by developers who love word games and real-time multiplayer experiences
-          </p>
-          <div className="flex items-center justify-center gap-2 mt-4">
-            <a 
-              href="https://github.com/AHILL-0121" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-smoke hover:text-cream transition-colors"
-              title="View on GitHub"
-            >
-              <svg 
-                className="w-6 h-6" 
-                fill="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
-              </svg>
-            </a>
+        <div className="steps" aria-label="How to play">
+          <div className="step">
+            <div className="n">01</div>
+            <div className="vis"><span className="sticker">ING</span></div>
+            <p>Spot the letters</p>
+          </div>
+          <div className="step">
+            <div className="n">02</div>
+            <div className="vis"><span className="kw">K<mark>ING</mark></span></div>
+            <p>Type a word with them</p>
+          </div>
+          <div className="step">
+            <div className="n">03</div>
+            <div className="vis"><PassIllustration /></div>
+            <p>Pass it before it blows</p>
           </div>
         </div>
       </div>
-    </div>
+
+      <div className="band" aria-hidden="true">
+        <div className="track">
+          {[0, 1].map((copy) =>
+            BAND_WORDS.map((w) => (
+              <Fragment key={`${copy}-${w}`}>
+                <span>{w}</span>
+                <span>/</span>
+              </Fragment>
+            ))
+          )}
+        </div>
+      </div>
+
+      <ToastStack toasts={toasts} />
+    </main>
   );
 }

@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss";
 
+// Mirrors the tokens in app/design.css so utilities, where used, stay on palette.
 const config: Config = {
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,22 +10,22 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        black: "#0a0a08",
-        charcoal: "#111110",
-        ash: "#1c1c1a",
-        ember: "#ff4500",
-        flame: "#ff6a1a",
-        glow: "#ff8c42",
-        gold: "#ffc340",
-        acid: "#d4ff00",
-        cream: "#f5f0e8",
-        smoke: "#5a5a55",
-        cinder: "#2a2a27",
+        ink: "#080706",
+        bg: "#131110",
+        card: "#201c18",
+        line: "#3b342c",
+        paper: "#f3ead7",
+        muted: "#a9a193",
+        fuse: "#ff4d1c",
+        amber: "#f5b700",
+        sage: "#8fb996",
+        steel: "#7aa6c2",
+        rose: "#e98a7a",
+        danger: "#e8322b",
       },
       fontFamily: {
-        display: ["Bebas Neue", "sans-serif"],
-        body: ["Syne", "sans-serif"],
-        mono: ["JetBrains Mono", "monospace"],
+        sans: ["var(--font-sans)", "Archivo", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "JetBrains Mono", "monospace"],
       },
     },
   },

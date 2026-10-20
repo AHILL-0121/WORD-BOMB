@@ -1,0 +1,14 @@
+{
+  "root": true,
+  "extends": ["next/core-web-vitals"],
+  "ignorePatterns": [".next/", ".partykit/", "node_modules/"],
+  "rules": {
+    "@next/next/no-img-element": "error"
+  },
+  "overrides": [
+    {
+      "files": ["party/**/*.ts", "tests/**/*.ts", "lib/**/*.ts"],
+      "env": { "node": true }
+    }
+  ]
+}

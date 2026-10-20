@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Word Bomb">
+  <circle cx="15" cy="18.5" r="11" fill="#0b0a09" stroke="#ff4d1c" stroke-width="2.4"/>
+  <ellipse cx="11" cy="14" rx="2.6" ry="1.6" fill="#f3ead7" opacity=".18" transform="rotate(-20 11 14)"/>
+  <path d="M21 8.5 Q24.5 7 23.5 3.5" fill="none" stroke="#e9d7ae" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="23.7" cy="3.2" r="2.6" fill="#f5b700"/>
+  <circle cx="23.7" cy="3.2" r="1.2" fill="#f3ead7"/>
+  <circle cx="27" cy="1.8" r="1" fill="#f5b700"/>
+  <circle cx="20.4" cy="1.6" r=".8" fill="#ff4d1c"/>
+</svg>

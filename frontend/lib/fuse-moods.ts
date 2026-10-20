@@ -1,48 +1,50 @@
-// FUSE Mood System — Type definitions, colors, and dialogue lines
+// FUSE mood system: mood names and the things FUSE says.
+//
+// How each mood looks lives in the stylesheet (`.fuse-wrap[data-mood=...]` in
+// app/globals.css); the SVG itself is in components/ui/Fuse.tsx.
 
-export type FuseMood = 
-  | "idle" 
-  | "excited" 
-  | "nervous" 
-  | "happy" 
-  | "angry" 
-  | "sad" 
-  | "thinking" 
-  | "celebrating" 
+export type FuseMood =
+  | "idle"
+  | "excited"
+  | "nervous"
+  | "happy"
+  | "angry"
+  | "sad"
+  | "thinking"
+  | "celebrating"
   | "dead";
 
-export interface MoodConfig {
-  label: string;
-  color: string;
-  bodyColor: string;
-  eyeColor: string;
-}
-
-export const MOODS: Record<FuseMood, MoodConfig> = {
-  idle:        { label: "IDLE",       color: "#ff8c42", bodyColor: "#1c1c1a", eyeColor: "#ff8c42" },
-  excited:     { label: "EXCITED",    color: "#d4ff00", bodyColor: "#1c2a00", eyeColor: "#d4ff00" },
-  nervous:     { label: "NERVOUS",    color: "#ffc340", bodyColor: "#2a1a00", eyeColor: "#ffc340" },
-  happy:       { label: "HAPPY",      color: "#ff8c42", bodyColor: "#1c1c1a", eyeColor: "#ffc340" },
-  angry:       { label: "ANGRY",      color: "#ff2200", bodyColor: "#2a0500", eyeColor: "#ff2200" },
-  sad:         { label: "SAD",        color: "#5a5a55", bodyColor: "#151515", eyeColor: "#5a7a8a" },
-  thinking:    { label: "THINKING",   color: "#ffc340", bodyColor: "#1c1a00", eyeColor: "#ffc340" },
-  celebrating: { label: "WIN!",       color: "#d4ff00", bodyColor: "#1a2a00", eyeColor: "#d4ff00" },
-  dead:        { label: "DEAD",       color: "#333",    bodyColor: "#0a0a08", eyeColor: "#333" },
+export const MOOD_LABELS: Record<FuseMood, string> = {
+  idle: "Idle",
+  excited: "Excited",
+  nervous: "Nervous",
+  happy: "Happy",
+  angry: "Angry",
+  sad: "Sad",
+  thinking: "Thinking",
+  celebrating: "Celebrating",
+  dead: "Out",
 };
 
-export const DIALOGUE: Record<FuseMood, string[]> = {
-  idle:        ["...ticking away.", "You gonna type or what?", "Still here. Waiting.", "The fuse burns either way."],
-  excited:     ["YES! THAT'S THE ONE!", "OH WE ARE COOKING!", "KEEP GOING!", "I FELT THAT IN MY FUSE!"],
-  nervous:     ["tick... tick... tick...", "Come on come on come ON—", "That's not a lot of time...", "...I'm sweating. Can bombs sweat?"],
-  happy:       ["Nice word. I respect it.", "Heh. Not bad.", "That one had FLAVOR.", "See? Easy. You got this."],
-  angry:       ["THAT IS NOT A WORD.", "I SWEAR ON MY FUSE—", "WRONG. WRONG. WRONG.", "ARE YOU EVEN TRYING?!"],
-  sad:         ["...you ran out of time.", "I believed in you.", "That's a life gone.", "It's fine. It's fine. (it's not fine)"],
-  thinking:    ["Hmm. Something with that syllable...", "What about... no. Maybe...", "Calculating vocabulary...", "I know you know this one."],
-  celebrating: ["CHAMPION! ABSOLUTE LEGEND!", "THAT'S WHAT I'M TALKING ABOUT!", "WE DID IT!", "FLAWLESS. PERFECT. BEAUTIFUL."],
-  dead:        ["...", "...boom.", "worth it.", "see you next round."],
+/** Contextual lines. Functions take the details that make the line land. */
+export const LINES = {
+  yourTurn: ["Your move. No pressure. (Lots of pressure.)", "Go go go!", "I'm counting on you. Literally.", "Tick tock, wordsmith."],
+  happy: ["Nice. I respect it.", "Heh. Not bad.", "That one had flavour.", "Smooth."],
+  long: (letters: number) => [`${letters} letters?! Show-off.`, "Okay, dictionary.", "Big brain energy."],
+  clutch: (secondsLeft: string) => [`With ${secondsLeft}s left?! My heart.`, "Cutting it close.", "I almost went off!"],
+  angry: ["That is not a word.", "I swear on my fuse—", "Try again. Properly."],
+  used: ["Already used. Nice try.", "Déjà vu much?"],
+  wrongLetters: ["Read the bomb!", "Wrong letters, friend."],
+  timeout: (name: string) => [`${name}… I believed in you.`, "…boom.", `Oof. Sorry ${name}.`],
+  youTimedOut: ["…you ran out of time.", "Boom. That one's on you."],
+  out: (name: string) => [`${name} is out!`, `Farewell, ${name}.`],
+  youOut: ["You're out. …boom."],
+  bonus: ["All 26?! Take a heart, genius."],
+  lobby: ["The fuse is patient. I am not.", "Invite more victims. I mean friends.", "Ready when you are.", "I've been practising my ticking."],
+  win: (name: string) => [`${name} survives!`],
+  youWin: ["Champion! I knew it!"],
 };
 
-export function getRandomDialogue(mood: FuseMood): string {
-  const lines = DIALOGUE[mood] || DIALOGUE.idle;
+export function pickLine(lines: readonly string[]): string {
   return lines[Math.floor(Math.random() * lines.length)];
 }

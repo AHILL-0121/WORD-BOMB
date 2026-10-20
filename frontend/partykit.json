@@ -1,5 +1,6 @@
 {
+  "$schema": "node_modules/partykit/schema.json",
   "name": "wordbomb",
-  "main": "./party/index.js",
-  "compatibilityDate": "2024-01-01"
+  "main": "./party/index.ts",
+  "compatibilityDate": "2024-09-23"
 }

@@ -3,10 +3,16 @@ frontend/node_modules
 frontend/.next
 frontend/.partykit
 frontend/dist
-.github
 # Environment variables
 frontend/.env.local
 frontend/.env
+
+# Local planning notes
+/plan
+*.md
+!README.md
+# TypeScript incremental build cache
+frontend/*.tsbuildinfo
 
 # Logs
 *.log

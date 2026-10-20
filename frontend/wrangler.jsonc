@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "wordbomb",
+  "main": "./party/index.ts",
+  "compatibility_date": "2024-09-23",
+  // routePartykitRequest matches URL path segment /parties/<name>/<room>
+  // by doing env[name.toLowerCase()]. The client hits /parties/word-bomb-server/<room>
+  // so the binding name must be "word-bomb-server" (lowercases to itself).
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "word-bomb-server",
+        "class_name": "WordBombServer"
+      }
+    ]
+  },
+  // SQLite-backed Durable Objects require an explicit migration entry.
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "WordBombServer"
+      ]
+    }
+  ]
+}

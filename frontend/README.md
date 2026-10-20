@@ -1,163 +1,110 @@
-# Word Bomb 💣
+# Word Bomb — frontend
 
-A fast-paced multiplayer word game where players race against time to find words containing a given syllable. Built with Next.js and PartyKit for real-time multiplayer action.
+Next.js 14 app plus the PartyKit realtime server. See the [root README](../README.md) for gameplay,
+architecture and deployment; this file covers the details specific to working in this directory.
 
-## 🎮 Features
-
-- **Real-time Multiplayer:** Up to 8 players per room
-- **Character Avatars:** Choose from 16 preset characters
-- **AI Opponents:** Play solo against 1-3 AI players (powered by Groq)
-- **Customizable Settings:** Adjust difficulty, lives, timers, and more
-- **Reconnection System:** 30-second grace period for temporary disconnects
-- **Word Validation:** Dictionary API + offline fallback wordlist
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 18+ and npm
-- Optional: Groq API key for AI mode (free at https://console.groq.com/keys)
-
-### Installation
+## Setup
 
 ```powershell
-# Navigate to frontend directory
 cd frontend
-
-# Install dependencies
 npm install
 ```
 
-### Configuration
-
-Create `.env.local` in the `frontend` directory:
+Create `.env.local`:
 
 ```env
 NEXT_PUBLIC_PARTYKIT_HOST=localhost:1999
-GROQ_API_KEY=your_groq_api_key_here  # Optional - for AI mode
+GROQ_API_KEY=your_groq_api_key_here   # optional — AI mode
 ```
 
-### Running Locally
+## Scripts
 
-**Terminal 1 - Next.js Frontend:**
+| Script | What it does |
+|---|---|
+| `npm run dev` | Next.js dev server on :3000 |
+| `npm run party:dev` | PartyKit dev server on :1999 |
+| `npm run build` | Production build |
+| `npm run typecheck` | `tsc --noEmit`, including `party/index.ts` and the tests |
+| `npm run lint` | ESLint (`next/core-web-vitals`) |
+| `npm test` | `node:test` suites, run through `tsx` |
+| `npm run party:check` | Bundles the PartyKit entrypoint the way a deploy does |
+| `npm run check` | All of the above gates in one command |
+
+Both servers must be running to play locally. `partykit dev` loads `.env.local` itself, so the Groq
+key works in development with no extra setup.
+
+## Layout
+
+```
+app/          Next.js App Router — pages, metadata, generated icons and social card
+components/   LandingPage, GameRoom, room/ (lobby, settings, game, results), ui/ (Fuse, Token, Icon)
+hooks/        usePartySocket (transport, clock sync, connection status), useFuseMood
+lib/          game-logic (pure rules, shared with the server), syllables, wordlist,
+              ai-service, avatars, fuse-moods
+party/        PartyKit server — the authoritative game loop
+tests/        node:test suites
+types/game.ts The wire contract, imported by both the client and the server
+scripts/      Build checks
+```
+
+## Notes
+
+### The server is authoritative
+
+`party/index.ts` owns turn order, timers, validation and settings bounds. It imports the same
+`types/game.ts` the browser does, so a change to a message shape is a compile error on both sides.
+
+Turn position is tracked by **player id**, not by an index into the list of surviving players.
+Indexing into that filtered list shifted the rotation on every elimination and skipped a player.
+
+Only one word may be in flight per turn (`resolving`), and every async operation captures a
+`turnToken` it re-checks on resume, so a slow dictionary lookup can never resolve into a turn that
+has already ended.
+
+### `sessionId` is server-only
+
+It is the reconnection credential. Broadcasting it would let any player replay another player's
+identity, so it is stripped in `publicState()` and never leaves the worker.
+
+### Word validation
+
+The Free Dictionary API is primary, with a 3.5s timeout and a per-room result cache. On timeout or
+network failure it falls back to `lib/wordlist.ts`.
+
+`lib/syllables.ts` filters the syllable bank at module load to those with at least
+`MIN_OFFLINE_ANSWERS` words in that fallback list, which makes an unanswerable round impossible by
+construction. `tests/content.test.ts` asserts the invariant.
+
+### AI opponents
+
+`lib/ai-service.ts` calls Groq (`openai/gpt-oss-120b`) over plain `fetch`. It is a reasoning model,
+so `max_completion_tokens` must be generous — reasoning tokens count against the budget, and a small
+value returns empty content.
+
+**`GROQ_API_KEY` belongs to the PartyKit deployment, not Vercel:**
+
 ```powershell
-cd frontend
-npm run dev
-```
-Open http://localhost:3000
-
-**Terminal 2 - PartyKit WebSocket Server:**
-```powershell
-cd frontend
-npm run party:dev
+npx partykit env add GROQ_API_KEY
 ```
 
-### Deployment
+The AI service runs inside the worker. A key set only in the Vercel dashboard is never read, and
+every AI move falls back to the offline list.
 
-**Frontend (Vercel):**
-```powershell
-cd frontend
-vercel
-```
+### Windows
 
-**PartyKit Server:**
-```powershell
-cd frontend
-npx partykit@latest deploy
-```
+`npm run party:dev` uses the pinned `partykit` dependency rather than `npx partykit@latest`, so dev,
+CI and deploy all run the same version.
 
-Set environment variables in Vercel dashboard:
-- `NEXT_PUBLIC_PARTYKIT_HOST` - Your PartyKit deployment URL
-- `GROQ_API_KEY` - Your Groq API key (for AI mode)
+## Customising
 
-## 🎯 How to Play
+**Player tokens** — `lib/avatars.ts`. A token is an ink colour and a shape (disc or square); the
+letter on it is the player's initial. Add an entry to `INKS` to offer another colour.
 
-1. **Landing Page:**
-   - Enter your name
-   - Choose an avatar from 16 options
-   - Create a room or join with a 4-letter code
+**Default settings** — `types/game.ts` (`DEFAULT_ROOM_SETTINGS`). The permitted ranges live in
+`SETTINGS_BOUNDS` in `lib/game-logic.ts` and are enforced server-side.
 
-2. **Lobby (Host Only):**
-   - Click "⚙️ ROOM SETTINGS" to customize:
-     - Game mode (multiplayer or AI)
-     - Difficulty (easy, medium, hard)
-     - Lives (1-5)
-     - Timer settings
-     - AI player count (if AI mode)
-   - Click "START GAME" when ready
+**FUSE the mascot** — see [FUSE.md](./FUSE.md).
 
-3. **Gameplay:**
-   - A syllable appears (e.g., "tion")
-   - Type a word containing that syllable ("action", "station", etc.)
-   - Press ENTER to submit
-   - Timer decreases each round
-   - Fail or timeout = lose a life
-   - Lose all lives = eliminated
-   - Last player standing wins!
+## License
 
-## 🏗️ Tech Stack
-
-- **Frontend:** Next.js 14, TypeScript, Tailwind CSS
-- **Backend:** PartyKit (Cloudflare Workers)
-- **AI:** Groq API (llama-3.3-70b-versatile)
-- **Validation:** Free Dictionary API + offline wordlist
-
-## 📁 Project Structure
-
-```
-frontend/
-├── app/                  # Next.js App Router
-├── components/           # React components
-├── hooks/                # WebSocket client hook
-├── lib/                  # Utilities (syllables, wordlist, AI service)
-├── party/                # PartyKit server
-└── types/                # TypeScript interfaces
-```
-
-## 🔧 Development Notes
-
-### Windows Compatibility
-Use PartyKit v0.0.115 via npx (v0.0.111 has path bugs):
-```json
-"party:dev": "npx partykit@latest dev"
-```
-
-### TypeScript Errors
-Groq SDK may show type errors in IDE but works at runtime. This is safe to ignore.
-
-### Session Persistence
-Players are assigned a `sessionId` stored in localStorage. Refreshing the page within 30 seconds maintains host status and reconnects seamlessly.
-
-## 🎨 Customization
-
-### Adding Avatars
-Edit `lib/avatars.ts`:
-```typescript
-export const AVATARS: Avatar[] = [
-  { id: 'your-id', emoji: '🎭', name: 'Your Avatar' },
-  // ...
-];
-```
-
-### Adjusting Default Settings
-Edit `types/game.ts`:
-```typescript
-export const DEFAULT_ROOM_SETTINGS: RoomSettings = {
-  gameMode: 'multiplayer',
-  difficulty: 'medium',
-  maxPlayers: 8,
-  lives: 3,
-  // ...
-};
-```
-
-## 📄 License
-
-MIT
-
-## 👨‍💻 Developer
-
-Built with ❤️ by Asus
-
----
-
-For detailed feature documentation, see [FEATURES.md](./FEATURES.md)
+MIT.

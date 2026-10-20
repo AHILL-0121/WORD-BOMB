@@ -1,7 +1,11 @@
-// Fallback word list for offline validation
-// In production, this should be a comprehensive list of ~50,000 valid English words
+// Fallback dictionary used when the Dictionary API is unreachable or slow.
+//
+// This is intentionally a curated list rather than an exhaustive one. Its job is
+// to guarantee that every syllable the game can draw has enough valid answers to
+// be playable offline -- `lib/syllables.ts` enforces that invariant at startup
+// against this list, and `tests/wordlist.test.ts` asserts it.
 
-export const wordList = new Set([
+const BASE_WORDS = [
   "abandon", "ability", "able", "about", "above", "abroad", "absence", "absent", "absolute", "absolutely",
   "absorb", "abuse", "academic", "accept", "access", "accident", "accompany", "accomplish", "according",
   "account", "accurate", "accuse", "achieve", "achievement", "acid", "acknowledge", "acquire", "across",
@@ -306,7 +310,91 @@ export const wordList = new Set([
   "wonderful", "wood", "wooden", "word", "work", "worker", "working", "works", "workshop", "world", "worried",
   "worry", "worth", "would", "wound", "wrap", "write", "writer", "writing", "wrong", "yard", "yeah", "year",
   "yell", "yellow", "yes", "yesterday", "yet", "yield", "you", "young", "your", "yourself", "youth", "zone"
-]);
+];
+
+/**
+ * Coverage backfill.
+ *
+ * Audit of the syllable bank against BASE_WORDS found three syllables with zero
+ * possible answers ("ded", "tid", "zer") and seventeen more with only one or
+ * two, which made those rounds effectively unwinnable whenever the Dictionary
+ * API was unavailable. These are real words chosen to close those gaps.
+ */
+const COVERAGE_WORDS = [
+  // -ded
+  "added", "needed", "decided", "provided", "included", "guided", "faded", "folded",
+  "handed", "landed", "ended", "blended", "wounded", "founded", "funded", "graded",
+  "loaded", "molded", "worded", "guarded", "boarded", "branded", "rounded", "sounded",
+  "minded", "descended", "extended", "recorded", "responded", "attended", "defended",
+  "demanded", "depended", "divided", "avoided", "invaded", "shredded", "embedded",
+  // tid-
+  "tidy", "tide", "tidal", "tidbit", "tidings", "untidy", "riptide", "yuletide", "tides",
+  // -zer-
+  "zero", "zeros", "zeroed", "freezer", "blazer", "tweezers", "bulldozer", "appetizer",
+  "organizer", "analyzer", "fertilizer", "vaporizer", "sterilizer",
+  // gor-
+  "gorge", "gorgeous", "gory", "gorilla", "category", "categories", "categorize",
+  "algorithm", "algorithms", "allegory", "vigor", "vigorous", "rigor", "rigorous",
+  // -ube
+  "tube", "tubes", "cube", "cubes", "cubed", "tuber",
+  // -ued
+  "argued", "valued", "continued", "rescued", "issued", "queued", "pursued", "sued",
+  "glued", "clued", "subdued",
+  // -umb-
+  "number", "numbers", "thumb", "humble", "crumb", "plumber", "dumb", "numb", "slumber",
+  "cucumber", "lumber", "umbrella", "tumble", "jumble", "mumble", "rumble", "stumble",
+  // -unk / unk-
+  "trunk", "drunk", "chunk", "junk", "sunk", "bunk", "shrunk", "skunk", "punk", "flunk",
+  "chunky", "unknown", "unkind",
+  // -led
+  "called", "filled", "pulled", "killed", "ruled", "handled", "settled", "traveled",
+  "labeled", "canceled", "controlled", "doubled", "troubled", "puzzled", "sled", "fled",
+  "bled", "led", "smiled", "styled",
+  // rob-/-rob-
+  "problem", "problems", "robot", "robots", "probe", "probably", "probable", "robust",
+  "rob", "robe", "robbed", "robber", "robbery", "microbe", "wardrobe", "probation",
+  // sam-
+  "same", "sample", "samples", "sampling", "samurai", "sameness",
+  // -sar-
+  "sarcasm", "sarcastic", "sardine", "necessary", "adversary", "anniversary", "sari",
+  // sir-/-sir-
+  "desire", "desired", "desires", "desirable", "sir", "siren", "sirens",
+  // tex-
+  "text", "texts", "texture", "textile", "context", "contexts", "textbook", "pretext",
+  "texting", "textual",
+  // -ule
+  "rule", "rules", "ruler", "module", "modules", "schedule", "capsule", "molecule",
+  "granule", "ridicule", "capsules",
+  // une-/-une
+  "tune", "tunes", "tuned", "june", "immune", "fortune", "fortunes", "dune", "prune",
+  "commune", "uneven", "unequal", "unemployed", "unexpected", "unearth",
+  // wal-
+  "wall", "walls", "walk", "walked", "walking", "wallet", "wallpaper", "walnut",
+  "walrus", "sidewalk", "catwalk",
+  // wan-
+  "want", "wanted", "wants", "wander", "wandered", "wane", "swan", "swans",
+  // was-
+  "was", "wash", "washed", "washing", "washer", "waste", "wasted", "wasp",
+  // wat-
+  "water", "waters", "watch", "watched", "watching", "watery", "waterfall", "swat",
+];
+
+/**
+ * Normalises the raw lists into the lookup set.
+ *
+ * `isValidWord` lowercases its input, so the 40 capitalised entries in
+ * BASE_WORDS ("Bible", "English", "TV", ...) could never be matched by any
+ * submission, and hyphenated entries ("long-term", "so-called") could not
+ * either since a submitted word is letters-only. Both are folded here rather
+ * than left as dead weight.
+ */
+function normalise(words: string[]): string[] {
+  return words
+    .map((word) => word.toLowerCase().trim())
+    .filter((word) => /^[a-z]+$/.test(word));
+}
+
+export const wordList = new Set(normalise([...BASE_WORDS, ...COVERAGE_WORDS]));
 
 /**
  * Validates if a word exists in the fallback dictionary
